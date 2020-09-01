@@ -1,0 +1,24 @@
+{
+  "name": "koinos-airdrop-tool",
+  "version": "1.0.0",
+  "description": "Airdrop tooling for Koinos ERC-20 Mining",
+  "main": "app.js",
+  "dependencies": {
+    "web3": "^1.2.11"
+  },
+  "devDependencies": {},
+  "scripts": {
+    "start": "node app.js",
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/open-orchard/koinos-airdrop-tool.git"
+  },
+  "author": "OpenOrchard, Inc.",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/open-orchard/koinos-airdrop-tool/issues"
+  },
+  "homepage": "https://github.com/open-orchard/koinos-airdrop-tool#readme"
+}

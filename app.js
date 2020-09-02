@@ -17,30 +17,44 @@ program
 
 var web3 = new Web3( program.endpoint );
 var erc20 = new web3.eth.Contract( abi, program.contract );
+var startBlock = 0;
 
 async function calculateAirdrop() {
    console.log("Parsing events to get impacted addresses...");
 
-   let impactedAccounts = new Array();
-   await erc20.getPastEvents('Transfer', {
-      fromBlock: 0,
-      toBlock: 'latest'
-   }).then( (events) => {
-      let accountSet = new Set();
+   var impactedAccounts = new Array();
 
-      events.forEach( (event) => {
-         accountSet.add(event.returnValues.to);
-      });
-
-      accountSet.forEach( (account) => {
-         impactedAccounts.push(account);
-      })
+   // This can be replaced later with our snapshot block
+   var endBlock = await web3.eth.getBlock('latest').then( (block) => {
+      return block.number;
    });
+
+   var promises = new Array();
+   var accountSet = new Set();
+
+   for( var i = startBlock; i < endBlock; ++i )
+   {
+      promises.push(erc20.getPastEvents('Transfer', {
+         fromBlock: i,
+         toBlock: i
+      }).then( (events) => {
+         events.forEach( (event) => {
+            accountSet.add(event.returnValues.to);
+         });
+      }));
+   }
+
+   await Promise.all(promises);
+   promises = new Array();
+
+   accountSet.forEach( (account) => {
+      impactedAccounts.push(account);
+   })
 
    console.log("Getting balances at snapshot " + program.snapshot + "...");
    var balances = new Array();
 
-   const promises = impactedAccounts.map( async (address) => {
+   promises = impactedAccounts.map( async (address) => {
       await erc20.methods.balanceOfAt(address, program.snapshot).call().then( (balance)=> {
          balances.push( {"address": address, "balance": balance } );
       });

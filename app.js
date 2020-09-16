@@ -15,13 +15,33 @@ program
    .option('-o, --output <filename>', 'File to output the airdrop as JSON', 'airdrop.json')
    .parse(process.argv);
 
-var web3 = new Web3( program.endpoint );
-var erc20 = new web3.eth.Contract( abi, program.contract );
+var web3 = new Web3(program.endpoint);
+var erc20 = new web3.eth.Contract(abi, program.contract);
 var startBlock = 0;
 
-async function calculateAirdrop() {
-   console.log("Parsing events to get impacted addresses...");
+async function getTransfers(fromBlock, toBlock) {
+   return erc20.getPastEvents('Transfer', {
+      fromBlock: fromBlock,
+      toBlock: toBlock
+   }).then( (events) => {
+      return events;
+   }).catch( async (error) => {
+      return await getTransfers(fromBlock, toBlock);
+   });
+}
 
+async function getBalance(address) {
+   return erc20.methods.balanceOfAt(
+      address,
+      program.snapshot
+   ).call().then( (balance) => {
+      return balance;
+   }).catch( async (error) => {
+      return await getBalance(address);
+   });
+}
+
+async function calculateAirdrop() {
    var impactedAccounts = new Array();
 
    // This can be replaced later with our snapshot block
@@ -31,35 +51,34 @@ async function calculateAirdrop() {
 
    var promises = new Array();
    var accountSet = new Set();
+   const delta = 1000;
 
-   for( var i = startBlock; i < endBlock; ++i )
+   console.log("Getting transfer events...\n")
+   let lastProgress = parseFloat(0.0).toFixed(2);
+   let progress;
+
+   for (var i = startBlock; i <= endBlock; i += delta)
    {
-      promises.push(erc20.getPastEvents('Transfer', {
-         fromBlock: i,
-         toBlock: i
-      }).then( (events) => {
-         events.forEach( (event) => {
-            accountSet.add(event.returnValues.to);
-         });
-      }));
+      (await getTransfers(i, i + delta)).forEach( (event) => {
+         accountSet.add(event.returnValues.to);
+      });
+
+      progress = parseFloat((Math.min(100, 100 * (i + delta) / endBlock))).toFixed(2);
+      if (lastProgress != progress) {
+         process.stdout.clearLine();
+         process.stdout.cursorTo(0);
+         process.stdout.write(progress + '%');
+         lastProgress = progress;
+      }
    }
 
-   await Promise.all(promises);
-   promises = new Array();
+   console.log('\nGetting balances of impacted addresses...\n');
 
-   accountSet.forEach( (account) => {
-      impactedAccounts.push(account);
-   })
-
-   console.log("Getting balances at snapshot " + program.snapshot + "...");
    var balances = new Array();
 
-   promises = impactedAccounts.map( async (address) => {
-      await erc20.methods.balanceOfAt(address, program.snapshot).call().then( (balance)=> {
-         balances.push( {"address": address, "balance": balance } );
-      });
-   });
-   await Promise.all(promises);
+   for (let account of accountSet) {
+      balances.push({"address": account, "balance": await getBalance(account)});
+   }
 
    fs.writeFile(program.output, JSON.stringify(balances), function(err) {
       if(err) console.log(err);

@@ -18,6 +18,7 @@ program
 var web3 = new Web3(program.endpoint);
 var erc20 = new web3.eth.Contract(abi, program.contract);
 var startBlock = 0;
+var numEvents = 0;
 
 async function getTransfers(fromBlock, toBlock) {
    return erc20.getPastEvents('Transfer', {
@@ -75,9 +76,19 @@ async function calculateAirdrop() {
    console.log('\nGetting balances of impacted addresses...\n');
 
    var balances = new Array();
+   let count = 0;
+   lastProgress = parseFloat(0.0).toFixed(2);
 
    for (let account of accountSet) {
       balances.push({"address": account, "balance": await getBalance(account)});
+
+      progress = parseFloat((Math.min(100, 100 * (count) / accountSet.size))).toFixed(2);
+      if (lastProgress != progress) {
+         process.stdout.clearLine();
+         process.stdout.cursorTo(0);
+         process.stdout.write(progress + '%');
+         lastProgress = progress;
+      }
    }
 
    fs.writeFile(program.output, JSON.stringify(balances), function(err) {

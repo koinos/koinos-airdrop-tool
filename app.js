@@ -64,7 +64,7 @@ async function calculateAirdrop() {
          accountSet.add(event.returnValues.to);
       });
 
-      progress = parseFloat((Math.min(100, 100 * (i + delta) / endBlock))).toFixed(2);
+      progress = parseFloat((Math.min(100, 100 * (i + delta) / (endBlock - startBlock)))).toFixed(2);
       if (lastProgress != progress) {
          process.stdout.clearLine();
          process.stdout.cursorTo(0);

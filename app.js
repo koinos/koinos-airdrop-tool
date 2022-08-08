@@ -73,7 +73,8 @@ async function calculateAirdrop() {
       }
    }
 
-   console.log('\nGetting balances of impacted addresses...\n');
+   console.log('\nFound ' + accountSet.size() + ' accounts.\n');
+   console.log('Getting balances of impacted addresses...\n');
 
    var balances = new Array();
    let count = 0;
@@ -81,6 +82,7 @@ async function calculateAirdrop() {
 
    for (let account of accountSet) {
       balances.push({"address": account, "balance": await getBalance(account)});
+      count += 1;
 
       progress = parseFloat((Math.min(100, 100 * (count) / accountSet.size))).toFixed(2);
       if (lastProgress != progress) {

@@ -5,9 +5,10 @@
   "main": "app.js",
   "dependencies": {
     "commander": "^6.1.0",
+    "koinos-proto-js": "^0.0.26",
+    "protobufjs": "^7.0.0",
     "web3": "^1.2.11"
   },
-  "devDependencies": {},
   "scripts": {
     "start": "node app.js",
     "test": "echo \"Error: no test specified\" && exit 1"
